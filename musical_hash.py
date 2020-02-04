@@ -68,12 +68,13 @@ def file_to_song(filename: str) -> List[float]:
             numpy.mulitply(numpy.squeeze(wave.data[i:i+window.size]), window))
         i += window.size
     tones = [PITCH_STANDARD/4 * (2 ** (n / 12)) for n in range(12)]
-    notes = numpy.zeros(12, note_duration * sample_rate)
+    notes = []
     for tone in tones:
         note = numpy.zeros(note_duration * sample_rate)
         for harmonic in range(1,5):
             note = numpy.add(sin(2 * numpy.pi * tone * harmonic * linspace(0, note_duration, sample_rate)), note)
-            
+        notes.append(note)
+    fftnotes = numpy.zeros(12, )
     for seg in segments:
         fftlength = next_power_of_two(seg.size)
         segmentfft = numpy.fft(seg, n=fftlength)
