@@ -9,9 +9,9 @@ hash to use during computations.
 """
 
 
-import hashlib as _hashlib
-import numpy as _np
-import wavio as _wavio
+import hashlib
+import numpy
+import wavio
 from typing import Callable, List
 
 
@@ -101,6 +101,15 @@ G_SHARP_MINOR_PENTATONIC = 0x8d2
 
 
 def get_scale_frequencies(scale: int) -> List[float]:
+    """Return a list of frequencies for all notes in a given scale.
+    
+    Args:
+        scale: the scale for which to find the note frequencies.
+
+    Returns:
+        A list of floats whose entries correspond to note frequencies in the
+        given scale.
+    """
     semitone_frequencies = [PITCH_STANDARD * (2 ** (n / 12)) for n in range(12)]
     scale_frequencies = []
     for i in range(len(semitone_frequencies)):
@@ -108,18 +117,44 @@ def get_scale_frequencies(scale: int) -> List[float]:
             scale_frequencies.append(semitone_frequencies[i])
     return scale_frequencies
 
-def pitch_list_to_song(pitches: List[float],
-                       note_duration: float = 1,
+
+def pitch_list_to_tune(pitches: List[float],
+                       note_duration: float = DEFAULT_NOTE_DURATION,
                        sample_rate: int = DEFAULT_SAMPLE_RATE) -> ndarray:
+    """Convert a list of pitches to a tune.
+    
+    Args:
+        pitches: list of floats, each corresponding to a pitch in hertz.
+        note_duration: default note duration in seconds.
+        sample_rate: the sample rate for the output tune.
+
+    Returns:
+        A numpy array of samples at <sample_rate> that represents a tune
+        constructed by the input list of pitches.
+    """
     song = empty(0)
     for pitch in pitches:
-        song = append(song, sin(2 * numpy.pi * pitch * linspace(0, note_duration, sample_rate)))
+        song = append(
+            song,
+            sin(2 * numpy.pi * pitch * linspace(0, note_duration, sample_rate)))
     #b, a = scipy.signal.butter(1, 10000 / DEFAULT_SAMPLE_RATE, 'low')
     #song = scipy.signal.filtfilt(b, a, song)
     return song
 
+
 def bytes_to_pitches(bytes: bytearray,
                      key: int = CHROMATIC_SCALE) -> List[float]:
+    """Convert a bytearray to a list of pitches.
+
+    Args:
+        bytes: the input bytearray
+        key: the musical key for the output series of pitches.
+
+    Returns:
+        A list of floats corresponding to musical notes.  The notes are selected
+        by performing a change of base on the bytearray to the number of notes
+        in the selected musical key.
+    """
     scale = get_scale_frequencies(key)
     pitches = []
     data = int.from_bytes(bytes, byteorder='big')
@@ -130,10 +165,13 @@ def bytes_to_pitches(bytes: bytearray,
     pitches.append(scale[data])
     return pitches
 
-def song_to_bytes(song: List[float]) -> bytearray:
-    pass
+def tune_to_wave(tune: ndarray, filename: str) -> None:
+    """Write a tune to a wave file.
 
-def song_to_file(song: ndarray, filename: str) -> None:
+    Args:
+        tune: numpy array of samples of the tune to write to file
+        filename: the name of the file to write
+    """
     with wave.open(filename, 'w') as file:
         file.setnchannels(1)
         file.setsampwidth(2)
