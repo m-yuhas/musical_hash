@@ -9,9 +9,9 @@ hash to use during computations.
 """
 
 
-import hashlib
-import numpy
-import wavio
+import hashlib as _hashlib
+import numpy as _np
+import wavio as _wavio
 from typing import Callable, List
 
 
@@ -100,7 +100,7 @@ G_SHARP_MINOR_PENTATONIC = 0x8d2
 
 
 
-def get_scale_frequencies(scale: int) -> List[float]:
+def _get_scale_frequencies(scale: int) -> List[float]:
     """Return a list of frequencies for all notes in a given scale.
     
     Args:
@@ -118,9 +118,9 @@ def get_scale_frequencies(scale: int) -> List[float]:
     return scale_frequencies
 
 
-def pitch_list_to_tune(pitches: List[float],
+def _pitch_list_to_tune(pitches: List[float],
                        note_duration: float = DEFAULT_NOTE_DURATION,
-                       sample_rate: int = DEFAULT_SAMPLE_RATE) -> ndarray:
+                       sample_rate: int = DEFAULT_SAMPLE_RATE) -> _np.ndarray:
     """Convert a list of pitches to a tune.
     
     Args:
@@ -132,17 +132,19 @@ def pitch_list_to_tune(pitches: List[float],
         A numpy array of samples at <sample_rate> that represents a tune
         constructed by the input list of pitches.
     """
-    song = empty(0)
+    song = _np.empty(0)
     for pitch in pitches:
-        song = append(
+        song = _np.append(
             song,
-            sin(2 * numpy.pi * pitch * linspace(0, note_duration, sample_rate)))
+            _np.sin(
+                2 * _np.pi * pitch * _np.linspace(
+                    0, note_duration, sample_rate)))
     #b, a = scipy.signal.butter(1, 10000 / DEFAULT_SAMPLE_RATE, 'low')
     #song = scipy.signal.filtfilt(b, a, song)
     return song
 
 
-def bytes_to_pitches(bytes: bytearray,
+def _bytes_to_pitches(bytes: bytearray,
                      key: int = CHROMATIC_SCALE) -> List[float]:
     """Convert a bytearray to a list of pitches.
 
@@ -155,7 +157,7 @@ def bytes_to_pitches(bytes: bytearray,
         by performing a change of base on the bytearray to the number of notes
         in the selected musical key.
     """
-    scale = get_scale_frequencies(key)
+    scale = _get_scale_frequencies(key)
     pitches = []
     data = int.from_bytes(bytes, byteorder='big')
     while data > len(scale):
@@ -165,58 +167,73 @@ def bytes_to_pitches(bytes: bytearray,
     pitches.append(scale[data])
     return pitches
 
-def tune_to_wave(tune: ndarray, filename: str) -> None:
+
+def tune_to_wave(tune: _np.ndarray, filename: str) -> None:
     """Write a tune to a wave file.
 
     Args:
         tune: numpy array of samples of the tune to write to file
         filename: the name of the file to write
     """
-    with wave.open(filename, 'w') as file:
-        file.setnchannels(1)
-        file.setsampwidth(2)
-        file.setframerate(DEFAULT_SAMPLE_RATE)
-        for sample in numpy.nditer(song):
-            file.writeframesraw(struct.pack('<h', int(sample * 10000)))
+    #with wave.open(filename, 'w') as file:
+    #    file.setnchannels(1)
+    #    file.setsampwidth(2)
+    #    file.setframerate(DEFAULT_SAMPLE_RATE)
+    #    for sample in numpy.nditer(song):
+    #        file.writeframesraw(struct.pack('<h', int(sample * 10000)))
+    pass
+
 
 def file_to_song(filename: str) -> List[float]:
-    wave = wavio.read(filename)
-    window = numpy.hanning(int(wave.rate/4))
+    wave = _wavio.read(filename)
+    window = _np.hanning(int(wave.rate/4))
     segments = []
     i = 0
     while i < w.data.size:
         segmets.append(
-            numpy.mulitply(numpy.squeeze(wave.data[i:i+window.size]), window))
+            _np.mulitply(_np.squeeze(wave.data[i:i+window.size]), window))
         i += window.size
     tones = [PITCH_STANDARD/4 * (2 ** (n / 12)) for n in range(12)]
     notes = []
     for tone in tones:
-        note = numpy.zeros(note_duration * sample_rate)
+        note = _np.zeros(note_duration * sample_rate)
         for harmonic in range(1,5):
-            note = numpy.add(sin(2 * numpy.pi * tone * harmonic * linspace(0, note_duration, sample_rate)), note)
+            note = _np.add(
+                _np.sin(
+                    2 * _np.pi * tone * harmonic * _np.linspace(
+                        0, note_duration, sample_rate)), note)
         notes.append(note)
-    fftnotes = numpy.zeros(12, )
+    fftnotes = _np.zeros(12, )
     for seg in segments:
-        fftlength = next_power_of_two(seg.size)
-        segmentfft = numpy.fft(seg, n=fftlength)
+        fftlength = _next_power_of_two(seg.size)
+        segmentfft = _np.fft(seg, n=fftlength)
         
         
-def next_power_of_two(n):
+def _next_power_of_two(n: int) -> int:
+    """Find the next highest power of two.
+
+    Args:
+        n: any integer
+
+    Returns:
+        The next highest power of 2 after <n>.  If <n> is a power of 2, then <n>
+        is returned.
+    """
     p = 1
     while p < n:
         p <<= 1
     return p
-        
-        
+
 
 def musical_hash(bytes: bytearray,
                  algorithm,
                  key: int = CHROMATIC_SCALE,
                  note_duration: int = DEFAULT_NOTE_DURATION,
-                 sample_rate: int = DEFAULT_SAMPLE_RATE) -> ndarray:
+                 sample_rate: int = DEFAULT_SAMPLE_RATE) -> _np.ndarray:
     hashed_bytes = algorithm(bytes).digest()
-    pitches = bytes_to_pitches(hashed_bytes, key)
-    return pitch_list_to_song(pitches, note_duration, sample_rate)
+    pitches = _bytes_to_pitches(hashed_bytes, key)
+    return _pitch_list_to_song(pitches, note_duration, sample_rate)
+
 
 def musical_md5(bytes: bytearray,
                 key: int = CHROMATIC_SCALE,
@@ -224,23 +241,30 @@ def musical_md5(bytes: bytearray,
                 sample_rate: int = DEFAULT_SAMPLE_RATE):
     return musical_hash(bytes, md5, key, note_duration, sample_rate)
 
+
 def musical_sha1():
     pass
+
 
 def musical_sha224():
     pass
 
+
 def musical_sha384():
     pass
+
 
 def musical_sha512():
     pass
 
+
 def musical_blake2b():
     pass
 
+
 def musical_blake2s():
     pass
+
 
 def musical_crc32():
     pass
