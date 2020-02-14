@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-
-
 """Implements a musical hash in Python.
 
 Convert a hash into a sequence of notes so that you can "visualize" any given
@@ -9,96 +6,59 @@ hash to use during computations.
 """
 
 
-import hashlib as _hashlib
+import hashlib
 import numpy as _np
 import wavio as _wavio
+import zlib
+from constants import *
 from typing import Callable, List
+from locale import str
 
 
-# File IO Constants
-DEFAULT_SAMPLE_RATE = 44100
-DEFAULT_NOTE_DURATION = 1
+class MusicalHash(object):
+    """Represents a musical hash of a bytearray.
 
+    Attributes:
+        data: the input data to the musical hash.  Must be a bytearray
+        hash_method: the method to use for hashing.  Can be a string
+            for a built-in hash method, or callable for one that is user-defined
+        hashed_bytes: the hashed bytes
+    """
 
-# Pitch Standard and Chromatic Scale
-PITCH_STANDARD = 440
-CHROMATIC_SCALE = 0xfff
-
-
-# Diatonic Scales
-A_MAJOR = 0xab5
-A_MINOR = 0x5ad
-A_FLAT_MAJOR = 0xd5a
-A_FLAT_MINOR = 0xad6
-A_SHARP_MINOR = 0xb5a
-B_MAJOR = 0xad6
-B_MINOR = 0x6b5
-B_FLAT_MAJOR = 0x56b
-B_FLAT_MINOR = 0xb5a
-C_MAJOR = 0x5ad
-C_MINOR = 0xd6a
-C_FLAT_MAJOR = 0xad6
-C_SHARP_MAJOR = 0xb5a
-C_SHARP_MINOR = 0xad5
-D_MAJOR = 0x6b5
-D_MINOR = 0x5ab
-D_FLAT_MAJOR = 0xb5a
-D_FLAT_MINOR = 0xad5
-D_SHARP_MINOR = 0xb56
-E_MAJOR = 0xad5
-E_MINOR = 0x6ad
-E_FLAT_MAJOR = 0xd6a
-E_FLAT_MINOR = 0xb56
-E_SHARP_MINOR = 0xd5a
-F_MAJOR = 0x5ab
-F_MINOR = 0xd5a
-F_FLAT_MAJOR = 0xad5
-F_SHARP_MAJOR = 0xb56
-F_SHARP_MINOR = 0xab5
-G_MAJOR = 0x6ad
-G_MINOR = 0x56b
-G_FLAT_MAJOR = 0xb56
-G_SHARP_MAJOR = 0xd5a
-G_SHARP_MINOR = 0xad6
-
-# Pentatonic Scales
-A_BLUES_MAJOR = 0x2a5
-A_BLUES_MINOR = 0x529
-A_EGYPTIAN = 0x4a5
-A_MAJOR_PENTATONIC = 0x295
-A_MINOR_PENTATONIC = 0x4a9
-A_SHARP_BLUES_MAJOR = 0x163
-A_SHARP_BLUES_MINOR = 0xa52
-A_SHARP_EGYPTIAN = 0x94a
-A_SHARP_MAJOR_PENTATONIC = 0x14b
-A_SHARP_MINOR_PENTATONIC = 0x952
-B_BLUES_MAJOR = 0x8d2
-B_BLUES_MINOR = 0x631
-B_EGYPTIAN = 0x4a5
-B_MAJOR_PENTATONIC = 0x296
-B_MINOR_PENTATONIC = 0x4b1
-C_MAJOR_PENTATONIC = 0x48d
-C_BLUES_MAJOR = 0x1a5
-C_SHARP_BLUES_MAJOR = 0x34a
-C_SHARP_MAJOR_PENTATONIC = 0x31a
-D_BLUES_MAJOR = 0x2a5
-D_MAJOR_PENTATONIC = 0x295
-F_BLUES_MINOR = 0xc52
-F_EGYPTIAN = 0x94a
-F_MINOR_PENTATONIC = 0x952
-F_SHARP_BLUES_MINOR = 0xa31
-F_SHARP_EGYPTIAN = 0x8a5
-F_SHARP_MINOR_PENTATONIC = 0x8b1
-G_BLUES_MINOR = 0x529
-G_EGYPTIAN = 0x463
-G_MINOR_PENTATONIC = 0x469
-G_SHARP_BLUES_MAJOR = 0x54a
-G_SHARP_BLUES_MINOR = 0xa52
-G_SHARP_EGYPTIAN = 0x8c6
-G_SHARP_MAJOR_PENTATONIC = 0x51a
-G_SHARP_MINOR_PENTATONIC = 0x8d2
-
-
+    def __init__(self, data: bytearray, hash_method: str) -> None:
+        """Blah blah blah"""
+        self.data = data
+        self.hash_method = hash_method
+        self.hashed_bytes = None
+        builtin_methods = {
+            'md5': {'module': 'hashlib', 'constructor': hashlib.md5},
+            'sha1': {'module': 'hashlib', 'constructor': hashlib.sha1},
+            'sha224': {'module': 'hashlib', 'constructor': hashlib.sha224},
+            'sha384': {'module': 'hashlib', 'constructor': hashlib.sha384},
+            'sha512': {'module': 'hashlib', 'constructor': hashlib.sha512},
+            'blake2b': {'module': 'hashlib', 'constructor': hashlib.blake2b},
+            'blake2s': {'module': 'hashlib', 'constructor': hashlib.blake2s},
+            'asler32': {'module': 'zlib', 'function': zlib.adler32},
+            'crc32': {'module': 'zlib', 'function': zlib.crc32}}
+        if callable(self.hash_method):
+            self.hashed_bytes = self.hash_method(data)
+        elif self.hash_method.lower() in builtin_methods:
+            if builtin_methods[self.hash_method]['module'] == 'hashlib':
+                self.hashed_bytes = builtin_methods[self.hash_method]
+                    ['constructor'](self.data).digest()
+            elif builtin_methods[self.hash_method]['module'] == 'zlib':
+                self.hashed_bytes = builtin_methods[self.hash_method]
+                    ['function'](self.data)
+            else:
+                raise ValueError(
+                    'BUG: hash_method: {} not found in builtin_methods map, '
+                    'despite already checking the map for its existence. '
+                    'Please report this issue to the maintainers of '
+                    'musical_hash so it can be fixed'.format(self.hash_method))
+        else:
+            raise ValueError(
+                'The hash_method: {} is not supported.'.format(self.has_method))
+            
 
 def _get_scale_frequencies(scale: int) -> List[float]:
     """Return a list of frequencies for all notes in a given scale.
@@ -184,45 +144,6 @@ def tune_to_wave(tune: _np.ndarray, filename: str) -> None:
     pass
 
 
-def file_to_song(filename: str) -> List[float]:
-    wave = _wavio.read(filename)
-    window = _np.hanning(int(wave.rate/4))
-    segments = []
-    i = 0
-    while i < w.data.size:
-        segmets.append(
-            _np.mulitply(_np.squeeze(wave.data[i:i+window.size]), window))
-        i += window.size
-    tones = [PITCH_STANDARD/4 * (2 ** (n / 12)) for n in range(12)]
-    notes = []
-    for tone in tones:
-        note = _np.zeros(note_duration * sample_rate)
-        for harmonic in range(1,5):
-            note = _np.add(
-                _np.sin(
-                    2 * _np.pi * tone * harmonic * _np.linspace(
-                        0, note_duration, sample_rate)), note)
-        notes.append(note)
-    fftnotes = _np.zeros(12, )
-    for seg in segments:
-        fftlength = _next_power_of_two(seg.size)
-        segmentfft = _np.fft(seg, n=fftlength)
-        
-        
-def _next_power_of_two(n: int) -> int:
-    """Find the next highest power of two.
-
-    Args:
-        n: any integer
-
-    Returns:
-        The next highest power of 2 after <n>.  If <n> is a power of 2, then <n>
-        is returned.
-    """
-    p = 1
-    while p < n:
-        p <<= 1
-    return p
 
 
 def musical_hash(bytes: bytearray,
