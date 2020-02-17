@@ -26,10 +26,11 @@ This module has has three basic groupings:
 DEFAULT_SAMPLE_RATE = 44100
 
 
-# Pitch Standard and Chromatic Scale
+# Translation Constants
 PITCH_STANDARD = 440
 CHROMATIC_SCALE = 0xfff
-DEFAULT_NOTE_DURATION = 1
+DEFAULT_NOTE_DURATION = 0.5
+DEFAULT_TICKS_PER_NOTE = 1000
 
 
 # Diatonic Scales
