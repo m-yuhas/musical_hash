@@ -1,4 +1,5 @@
 import musical_hash
+import numpy
 import unittest
 
 
@@ -6,9 +7,11 @@ class TestConstructor(unittest.TestCase):
     """Test case for the MusicalHash constructor."""
     
     def setUp(self):
+        """Create a dummy function for testing the constructor."""
         self.dummy_function = lambda x : x
 
     def check_assertions(self, musical_hash_object, expectation):
+        """Simplify assertion checks for constructor tests."""
         self.assertEqual(
             musical_hash_object.data,
             expectation['data'],
@@ -23,6 +26,7 @@ class TestConstructor(unittest.TestCase):
             'Hashed bytes calculated correctly')
 
     def test_empty_bytearray(self):
+        """Test constructor when the bytearray is empty."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', self.dummy_function),
             {
@@ -31,6 +35,7 @@ class TestConstructor(unittest.TestCase):
                 'hashed_bytes': b''})
 
     def test_single_byte_bytearray(self):
+        """Test constructor when a single byte is input as the bytearray."""
         self.check_assertions(
             musical_hash.MusicalHash(b'A', self.dummy_function),
             {
@@ -39,6 +44,7 @@ class TestConstructor(unittest.TestCase):
                 'hashed_bytes': b'A'})
 
     def test_multibyte_byte_array(self):
+        """Test constructor when multiple bytes are input as the bytearray."""
         self.check_assertions(
             musical_hash.MusicalHash(b'AB', self.dummy_function),
             {
@@ -47,6 +53,7 @@ class TestConstructor(unittest.TestCase):
                 'hashed_bytes': b'AB'})
 
     def test_md5(self):
+        """Test constructor with md5 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'md5'),
             {
@@ -56,6 +63,7 @@ class TestConstructor(unittest.TestCase):
                                 b'\x98\xec\xf8B~'})
 
     def test_sha1(self):
+        """Test constructor with sha1 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'sha1'),
             {
@@ -65,6 +73,7 @@ class TestConstructor(unittest.TestCase):
                                 b'\xaf\xd8\x07\t'})
     
     def test_sha224(self):
+        """Test constructor with sha224 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'sha224'),
             {
@@ -74,6 +83,7 @@ class TestConstructor(unittest.TestCase):
                                 b'\x15\xa2\xb0\x1f\x82\x8e\xa6*\xc5\xb3\xe4/'})
 
     def test_sha384(self):
+        """Test constructor with sha384 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'sha384'),
             {
@@ -85,6 +95,7 @@ class TestConstructor(unittest.TestCase):
                                 b"\xd2\xf1H\x98\xb9["})
 
     def test_sha512(self):
+        """Test constructor with sha512 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'sha512'),
             {
@@ -97,6 +108,7 @@ class TestConstructor(unittest.TestCase):
                                 b"\x81\xa582z\xf9'\xda>"})
 
     def test_blake2b(self):
+        """Test constructor with blake2b as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'blake2b'),
             {
@@ -108,6 +120,7 @@ class TestConstructor(unittest.TestCase):
                                 b'\x90:h[\x14H\xb7U\xd5op\x1a\xfe\x9b\xe2\xce'})
 
     def test_blake2s(self):
+        """Test constructor with blake2s as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'blake2s'),
             {
@@ -118,6 +131,7 @@ class TestConstructor(unittest.TestCase):
                                 b'\xf9'})
 
     def test_adler32(self):
+        """Test constructor with adler32 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'adler32'),
             {
@@ -126,6 +140,7 @@ class TestConstructor(unittest.TestCase):
                 'hashed_bytes': b'\x01\x00\x00\x00'})
 
     def test_crc32(self):
+        """Test constructor with crc32 as hash type."""
         self.check_assertions(
             musical_hash.MusicalHash(b'', 'crc32'),
             {
@@ -138,21 +153,25 @@ class TestGetScaleFrequencies(unittest.TestCase):
     """Test case for the _get_scale_frequencies method."""
     
     def setUp(self):
+        """Create a dummy MusicalHash object."""
         self.hash = musical_hash.MusicalHash(b'', 'md5')
 
     def test_no_notes(self):
+        """Test with no notes in a scale."""
         self.assertEqual(
             self.hash._get_scale_frequencies(0x0),
             [],
             'No notes should be returned for an empty scale.')
 
     def test_one_note(self):
+        """Test with one note in a scale."""
         self.assertEqual(
             self.hash._get_scale_frequencies(0x1),
             [musical_hash.PITCH_STANDARD],
             'Single note at pitch standard should be returned for 0x1.')
 
     def test_two_notes(self):
+        """Test with two notes in a scale."""
         self.assertEqual(
             self.hash._get_scale_frequencies(0xa),
             [
@@ -160,16 +179,55 @@ class TestGetScaleFrequencies(unittest.TestCase):
                 musical_hash.PITCH_STANDARD * (2 ** (3/12))],
             'Two notes scale with no note at pitch standard.')
 
+class TestGetMidiNoteValues(unittest.TestCase):
+    """Test case for the _get_midi_note_values method."""
+
+    def setUp(self):
+        """Create a dummy MusicalHash object."""
+        self.hash = musical_hash.MusicalHash(b'', 'md5')
+
+    def test_no_notes(self):
+        """Test with no notes in a scale."""
+        self.assertEqual(
+            self.hash._get_midi_note_values(0x0),
+            [],
+            'No notes should be returned for an empty scale.')
+
+    def test_one_note(self):
+        """Test with one note in a scale."""
+        self.assertEqual(
+            self.hash._get_midi_note_values(0x1),
+            [69],
+            'Single note at A4 should be returned for 0x1')
+
+    def test_two_notes(self):
+        """Test with two notes in a scale."""
+        self.assertEqual(
+            self.hash._get_midi_note_values(0xa),
+            [70, 72],
+            'Two notes scale with #A4 and #B4.')
+
+
 class TestPitchesToTune(unittest.TestCase):
     """Test case for the _pitches_to_tune method."""
 
     def setUp(self):
+        """Create a dummy MusicalHash object."""
         self.hash = musical_hash.MusicalHash(b'', 'md5')
 
+    def check_assertions(self, pitch_list, note_duration, sample_rate):
+        output = self.hash._pitches_to_tune(pitch_list)
+        f_output = numpy.fft.fft(output)
+
     def test_empty_pitch_list(self):
-        pass
+        """Test with an empty list of pitches."""
+        self.assertEqual(
+            numpy.array_equal(self.hash._pitches_to_tune([]), numpy.empty(0)),
+            True,
+            'Empty input pitch list should return an empty numpy array')
 
     def test_one_element_pitch_list(self):
+        """Test with a list of pitches with one element."""
         pass
 
     def test_multi_element_pitch_list(self):

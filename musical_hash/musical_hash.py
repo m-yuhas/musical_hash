@@ -170,8 +170,8 @@ class MusicalHash(object):
             A numpy array of samples at <sample_rate> that represents a tune
             constructed by the input list of pitches.
         """
-        envelope = numpy.exp(
-            0 - numpy.linspace(0, note_duration, sample_rate * note_duration))
+        envelope = numpy.exp(0 - numpy.linspace(0, note_duration, \
+            int(sample_rate * note_duration)))
         tune = numpy.empty(0)
         for pitch in pitches:
             tune = numpy.append(
