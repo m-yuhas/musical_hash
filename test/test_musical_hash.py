@@ -15,15 +15,15 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(
             musical_hash_object.data,
             expectation['data'],
-            'Data field copied correctly')
+            'Data field not copied correctly')
         self.assertEqual(
             musical_hash_object.hash_method,
             expectation['hash_method'],
-            'Hash method copied correctly')
+            'Hash method not copied correctly')
         self.assertEqual(
             musical_hash_object.hashed_bytes,
             expectation['hashed_bytes'],
-            'Hashed bytes calculated correctly')
+            'Hashed bytes not calculated correctly')
 
     def test_empty_bytearray(self):
         """Test constructor when the bytearray is empty."""
@@ -177,7 +177,7 @@ class TestGetScaleFrequencies(unittest.TestCase):
             [
                 musical_hash.PITCH_STANDARD * (2 ** (1/12)),
                 musical_hash.PITCH_STANDARD * (2 ** (3/12))],
-            'Two notes scale with no note at pitch standard.')
+            'Two-note scale with no note at pitch standard should be returned.')
 
 class TestGetMidiNoteValues(unittest.TestCase):
     """Test case for the _get_midi_note_values method."""
@@ -205,7 +205,7 @@ class TestGetMidiNoteValues(unittest.TestCase):
         self.assertEqual(
             self.hash._get_midi_note_values(0xa),
             [70, 72],
-            'Two notes scale with #A4 and #B4.')
+            'Should return two-note scale with #A4 and #B4.')
 
 
 class TestPitchesToTune(unittest.TestCase):
@@ -216,8 +216,22 @@ class TestPitchesToTune(unittest.TestCase):
         self.hash = musical_hash.MusicalHash(b'', 'md5')
 
     def check_assertions(self, pitch_list, note_duration, sample_rate):
-        output = self.hash._pitches_to_tune(pitch_list)
-        f_output = numpy.fft.fft(output)
+        """Helper method to verify correct pitches and length in output."""
+        output = self.hash._pitches_to_tune(
+            pitch_list, note_duration, sample_rate)
+        self.assertEqual(
+            output.size,
+            len(pitch_list) * int(note_duration * sample_rate),
+            'Output tune is not the correct length.')
+        for note, frequency in enumerate(pitch_list):
+            f_output = numpy.fft.fft(output[note * \
+                int(sample_rate * note_duration):(note + 1) * \
+                int(sample_rate * note_duration)])
+            spectral_density = 10 * numpy.log10(f_output[:int(f_output.size/2)])
+            self.assertGreater(
+                spectral_density[int(frequency * note_duration)],
+                numpy.average(spectral_density),
+                'Output pitch is not present within the expected interval.')
 
     def test_empty_pitch_list(self):
         """Test with an empty list of pitches."""
@@ -228,28 +242,39 @@ class TestPitchesToTune(unittest.TestCase):
 
     def test_one_element_pitch_list(self):
         """Test with a list of pitches with one element."""
-        pass
+        self.check_assertions([1000], 1, 44100)
 
     def test_multi_element_pitch_list(self):
-        pass
+        """Test with a list of pitches with multiple elements."""
+        self.check_assertions([1000, 2000], 1, 44100)
 
     def test_negative_note_duration(self):
-        pass
+        """Test with a negative note duration."""
+        with self.assertRaises(ValueError):
+            self.hash._pitches_to_tune([1000], -1, 44100)
 
     def test_zero_note_duration(self):
-        pass
+        """Test with a note duration of zero seconds."""
+        with self.assertRaises(ValueError):
+            self.hash._pitches_to_tune([1000], 0, 44100)
 
     def test_positive_note_duration(self):
-        pass
+        """Test with a positive note duration."""
+        self.check_assertions([1000, 2000], 0.5, 44100)
 
     def test_negative_sample_rate(self):
-        pass
+        """Test with a negative sampling rate."""
+        with self.assertRaises(ValueError):
+            self.hash._pitches_to_tune([1000], 1, -44100)
 
     def test_zero_sample_rate(self):
-        pass
+        """Test with a sampling rate of zero."""
+        with self.assertRaises(ValueError):
+            self.hash._pitches_to_tune([1000], 1, 0)
 
     def test_positive_sample_rate(self):
-        pass
+        """Test with a positive sampling rate."""
+        self.check_assertions([1000, 2000], 0.5, 96000)
 
 
 if __name__ == '__main__':

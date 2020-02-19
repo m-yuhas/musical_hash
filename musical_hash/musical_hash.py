@@ -170,6 +170,10 @@ class MusicalHash(object):
             A numpy array of samples at <sample_rate> that represents a tune
             constructed by the input list of pitches.
         """
+        if note_duration <= 0 or sample_rate <= 0:
+            raise ValueError(
+                'The note duration and sample rate must be positive, ' \
+                'non-zero numbers')
         envelope = numpy.exp(0 - numpy.linspace(0, note_duration, \
             int(sample_rate * note_duration)))
         tune = numpy.empty(0)
@@ -177,8 +181,8 @@ class MusicalHash(object):
             tune = numpy.append(
                 tune,
                 envelope * numpy.sin(2 * numpy.pi * pitch * \
-                    numpy.linspace(0, note_duration, sample_rate * \
-                    note_duration)))
+                    numpy.linspace(0, note_duration, int(sample_rate * \
+                    note_duration))))
         return tune
 
     def _bytes_to_pitches(self,
