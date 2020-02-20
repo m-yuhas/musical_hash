@@ -15,22 +15,14 @@ This module has has three basic groupings:
     indicates that semitone is present in the scale, therefore the Hamming
     distance between any diatonic scale constant and 0x00 is always seven.
 
-4.) Pentatonic Scales - each constant is an integer constructed according to the
-    same rules as the diatonic scale constants.  The difference is now that the
-    Hamming distance between a pentatonic scale constant and 0x00 is always
+4.) Pentatonic Scales - each constant is an integer constructed according to
+    the same rules as the diatonic scale constants.  The difference is now that
+    the Hamming distance between a pentatonic scale constant and 0x00 is always
     five.
 """
 
-
-# File IO Constants
-DEFAULT_SAMPLE_RATE = 44100
-
-
 # Translation Constants
-PITCH_STANDARD = 440
 CHROMATIC_SCALE = 0xfff
-DEFAULT_NOTE_DURATION = 0.5
-DEFAULT_TICKS_PER_NOTE = 1000
 
 
 # Diatonic Scales

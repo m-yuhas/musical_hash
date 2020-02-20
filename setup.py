@@ -1,5 +1,8 @@
-import pathlib
+"""Setup script for the musical_hash package."""
+
+
 from setuptools import setup
+
 
 setup(
     name='musical_hash',

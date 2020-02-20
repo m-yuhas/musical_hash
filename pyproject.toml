@@ -11,8 +11,15 @@ envlist = py35,py36,py36,py37,py38,py39
 deps = coverage
        mido
        numpy
+       pycodestyle
+       pydoc-markdown
+       pylint
        wavio
-commands = coverage run --source=musical_hash -m unittest discover
+commands = pycodestyle musical_hash test setup.py
+           pylint musical_hash test setup.py
+           coverage run --source=musical_hash -m unittest discover
            coverage report -m
            python setup.py sdist
+           pydocmd simple musical_hash++
+           bash -c 'pydocmd simple musical_hash++ musical_hash.MusicalHash++ musical_hash._scales++ > docs/doc.md'
 """
