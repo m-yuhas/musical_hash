@@ -24,41 +24,33 @@ PITCH_STANDARD = 440
 HashFunction = Callable[[bytearray], bytearray]
 
 
-def get_scale_frequencies(scale: int) -> List[float]:
-    """Return a list of frequencies for all notes in a given scale.
-
-    Args:
-        scale: the scale for which to find the note frequencies.
-
-    Returns:
-        A list of floats whose entries correspond to note frequencies in
-        the given scale.
-    """
-    semitone_frequencies = [PITCH_STANDARD * (2 ** (n / 12))
-                            for n in range(12)]
-    scale_frequencies = []
-    for i, frequency in enumerate(semitone_frequencies):
-        if scale & (0x1 << i):
-            scale_frequencies.append(frequency)
-    return scale_frequencies
-
-
-def get_midi_note_values(scale: int) -> List[int]:
-    """Return a list of integers for all midi notes in a given scale.
-
-    Args:
-        scale: the scale for which to find the note frequencies.
-
-    Returns:
-        A list of integers whose entries correspond to note frequencies in
-        the given scale.
-    """
-    semitones = [69 + n for n in range(12)]
+def get_notes_in_scale(all_notes: List[Union[float, int, str]],
+                       scale: int) -> List[Union[float, int, str]]:
+    """Blah"""
+    if scale <= 1 or scale > 0xfff:
+        raise ValueError(
+            'A valid musical scale must include at least two notes and no '
+            'more then twelve notes (0x001 to 0xfff)')
     scale_notes = []
-    for i, semitone in enumerate(semitones):
+    for i, note in enumerate(all_notes):
         if scale & (0x1 << i):
-            scale_notes.append(semitone)
+            scale_notes.append(note)
+    if len(scale_notes) == 1:
+        raise ValueError(
+            'Only one note appears in this scale; currently monotonic scales '
+            'are not supported')
     return scale_notes
+
+
+def change_base(number: int, base: int) -> List[int]:
+    """Blah"""
+    digits = []
+    while number >= base:
+        remainder = number % base
+        digits.append(remainder)
+        number = number // base
+    digits.append(number)
+    return digits
 
 
 def pitches_to_tune(pitches: List[float],
@@ -105,7 +97,6 @@ class MusicalHash:
     def __init__(self,
                  data: bytearray,
                  hash_method: Union[str, HashFunction]) -> None:
-        """Blah blah blah"""
         self.data = data
         self.hash_method = hash_method
         self.hashed_bytes = None
@@ -140,6 +131,33 @@ class MusicalHash:
                 'The hash_method: {} is not '
                 'supported.'.format(self.hash_method))
 
+    def notes(self,
+              key: int = CHROMATIC_SCALE,
+              sharps: bool = True) -> List[str]:
+        """Return the hash as a list of notes ('A', '#A', B, '#B', ... ).
+
+        Args:
+            key: integer (see constants) corresponding to the musical key.
+            sharps: boolean True if semitones should be reported as sharps
+                (#<note) or False if they should be reported as flats
+                (b<note>).
+
+        Returns:
+            A List of string where each element corresponds to a note in the
+            musical representation of this hash value.
+        """
+        notes = []
+        if sharps:
+            notes = ['A', '#A', 'B', 'C', '#C', 'D',
+                     '#D', 'E', 'F', '#F', 'G', '#G']
+        else:
+            notes = ['A', 'bB', 'B', 'C', 'bD', 'D',
+                     'Eb', 'E', 'F', 'bG', 'G', 'bA']
+        scale = get_notes_in_scale(notes, key)
+        return [scale[i] for i in
+                change_base(int.from_bytes(self.hashed_bytes,
+                                           byteorder='little'), len(scale))]
+
     def samples(self,
                 key: int = CHROMATIC_SCALE,
                 note_duration: int = DEFAULT_NOTE_DURATION,
@@ -156,8 +174,19 @@ class MusicalHash:
             represented in <key> with each note lasting <note_duration>
             seconds.
         """
-        pitches = self._bytes_to_pitches(key)
-        return pitches_to_tune(pitches, note_duration, sample_rate)
+        if note_duration <= 0 or sample_rate <= 0:
+            raise ValueError(
+                'Note duration and sample rate must be positive, non-zero '
+                'integers')
+        scale = get_notes_in_scale(
+            [PITCH_STANDARD * (2 ** (n / 12)) for n in range(12)],
+            key)
+        return pitches_to_tune(
+            [scale[i] for i in change_base(
+                int.from_bytes(self.hashed_bytes, byteorder='little'),
+                len(scale))],
+            note_duration,
+            sample_rate)
 
     def wave(self,
              filename: str,
@@ -196,72 +225,19 @@ class MusicalHash:
         track = mido.MidiTrack()
         track.append(
             mido.Message('program_change', program=instrument, time=0))
-        for note in self._bytes_to_midi_notes(key, note_duration):
-            track.append(note)
+        scale = get_notes_in_scale([69 + n for n in range(12)], key)
+        for note in change_base(
+                int.from_bytes(self.hashed_bytes, byteorder='little'),
+                len(scale)):
+            track.append(mido.Message(
+                'note_on',
+                note=note,
+                velocity=127,
+                time=0))
+            track.append(mido.Message(
+                'note_off',
+                note=note,
+                velocity=127,
+                time=note_duration))
         file.tracks.append(track)
         file.save(filename)
-
-    def _bytes_to_pitches(self, key: int = CHROMATIC_SCALE) -> List[float]:
-        """Convert a bytearray to a list of pitches.
-
-        Args:
-            bytes: the input bytearray
-            key: the musical key for the output series of pitches.
-
-        Returns:
-            A list of floats corresponding to musical notes.  The notes are
-            selected by performing a change of base on the bytearray to the
-            number of notes in the selected musical key.
-        """
-        scale = get_scale_frequencies(key)
-        pitches = []
-        data = int.from_bytes(self.hashed_bytes, byteorder='little')
-        while data > len(scale):
-            remainder = data % len(scale)
-            pitches.append(scale[remainder])
-            data = int((data - remainder) / len(scale))
-        pitches.append(scale[data])
-        return pitches
-
-    def _bytes_to_midi_notes(self,
-                             key: int = CHROMATIC_SCALE,
-                             note_duration: int = DEFAULT_TICKS_PER_NOTE,
-                             volume: float = 0.5) -> List[mido.Message]:
-        """Convert a bytearray to a list of midi messages.
-
-        Args:
-            bytes: the input bytearray
-            key: the musical key for the output series of pitches.
-
-        Returns:
-            A list of midi messages.  Each note is selected by performing a
-            change of base on the bytearray to the number of notes in the
-            slected musical key.
-        """
-        scale = get_midi_note_values(key)
-        messages = []
-        data = int.from_bytes(self.hashed_bytes, byteorder='little')
-        while data > len(scale):
-            remainder = data % len(scale)
-            messages.append(mido.Message(
-                'note_on',
-                note=scale[remainder],
-                velocity=min(round(abs(volume * 127)), 127),
-                time=0))
-            messages.append(mido.Message(
-                'note_off',
-                note=scale[remainder],
-                velocity=min(round(abs(volume * 127)), 127),
-                time=note_duration))
-            data = int((data - remainder) / len(scale))
-        messages.append(mido.Message(
-            'note_on',
-            note=scale[data],
-            velocity=min(round(abs(volume * 127)), 127),
-            time=0))
-        messages.append(mido.Message(
-            'note_off',
-            note=scale[data],
-            velocity=min(round(abs(volume * 127)), 127),
-            time=note_duration))
-        return messages

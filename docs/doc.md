@@ -14,6 +14,22 @@ Attributes:
         user-defined
     hashed_bytes: the hashed bytes
 
+## notes
+```python
+MusicalHash.notes(self, key: int = 4095, sharps: bool = True) -> List[str]
+```
+Return the hash as a list of notes ('A', '#A', B, '#B', ... ).
+
+Args:
+    key: integer (see constants) corresponding to the musical key.
+    sharps: boolean True if semitones should be reported as sharps
+        (#<note) or False if they should be reported as flats
+        (b<note>).
+
+Returns:
+    A List of string where each element corresponds to a note in the
+    musical representation of this hash value.
+
 ## samples
 ```python
 MusicalHash.samples(self, key: int = 4095, note_duration: int = 0.5, sample_rate: int = 44100) -> numpy.ndarray
@@ -54,27 +70,4 @@ Args:
     note_duration: duration of each note in midi ticks
     volume: number between 0 and 1 where 1 is maximum volume and 0 is
         mute
-
-# musical_hash._scales
-Musical constants used while converting between bytes and melodies.
-
-This module has has three basic groupings:
-
-1.) File IO Constants - constants associated with sampling rate, bit depth, and
-    other options associated with sound quality.
-
-2.) Translation Constants - constants associated with the operation of
-    converting bytes to a melody.
-
-3.) Diatonic Scales - each constant is an integer that represents a particular
-    diatonic scale.  The first semitone in the octave (usually A440) is
-    represented by the least significant bit and the highest semitone (G before
-    A880) is represented by the most significant bit.  Each bit that is one
-    indicates that semitone is present in the scale, therefore the Hamming
-    distance between any diatonic scale constant and 0x00 is always seven.
-
-4.) Pentatonic Scales - each constant is an integer constructed according to
-    the same rules as the diatonic scale constants.  The difference is now that
-    the Hamming distance between a pentatonic scale constant and 0x00 is always
-    five.
 
