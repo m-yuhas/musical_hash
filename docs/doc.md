@@ -71,3 +71,8 @@ Args:
     volume: number between 0 and 1 where 1 is maximum volume and 0 is
         mute
 
+# get_scale
+```python
+get_scale(notes: List[str]) -> int
+```
+Convert a list of notes to a scale constant.

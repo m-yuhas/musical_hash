@@ -20,6 +20,6 @@ commands = pycodestyle musical_hash test setup.py
            coverage run --source=musical_hash -m unittest discover
            coverage report -m
            python setup.py sdist
-           bash -c 'pydocmd simple musical_hash++ musical_hash.MusicalHash++ > docs/doc.md'
+           bash -c 'pydocmd simple musical_hash++ musical_hash.MusicalHash++ musical_hash.get_scale++ > docs/doc.md'
 whitelist_externals = /bin/bash
 """

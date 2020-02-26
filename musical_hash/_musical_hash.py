@@ -24,6 +24,30 @@ PITCH_STANDARD = 440
 HashFunction = Callable[[bytearray], bytearray]
 
 
+def get_scale(notes: List[str]) -> int:
+    """Convert a list of notes to a scale constant."""
+    note_map = {'A': 0x1,
+                '#A': 0x2, 'bB': 0x2,
+                'B': 0x4,
+                'C': 0x8,
+                '#C': 0x10, 'bD': 0x10,
+                'D': 0x20,
+                '#D': 0x40, 'bE': 0x40,
+                'E': 0x80,
+                'F': 0x100,
+                '#F': 0x200, 'bG': 0x200,
+                'G': 0x400,
+                '#G': 0x800, 'bA': 0x800}
+    scale = 0x0
+    for note in notes:
+        try:
+            scale |= note_map[note]
+        except KeyError:
+            raise ValueError(
+                'The string {} is not a valid musical note'.format(note))
+    return scale
+
+
 def get_notes_in_scale(all_notes: List[Union[float, int, str]],
                        scale: int) -> List[Union[float, int, str]]:
     """Blah"""
@@ -201,6 +225,8 @@ class MusicalHash:
             note_duration: duration of each note in seconds
             sample_rate: sample rate for the output audio
         """
+        if filename == '':
+            raise FileNotFoundError('Empty filename not permitted')
         wavio.write(
             file=filename,
             data=self.samples(key, note_duration, sample_rate),

@@ -2,6 +2,7 @@
 
 
 from typing import Callable, Dict, List, Union
+import os
 import unittest
 import numpy
 import musical_hash
@@ -329,17 +330,17 @@ class TestSamples(unittest.TestCase):
     def test_too_many_notes_in_key(self) -> None:
         """Test key with too many notes."""
         with self.assertRaises(ValueError):
-            self.hash.notes(key=0x2fff)
+            self.hash.samples(key=0x2fff)
 
     def test_negative_note_duration(self) -> None:
         """Test negative note duration."""
         with self.assertRaises(ValueError):
-            self.hash.notes(key=0x111, note_duration=-1)
+            self.hash.samples(key=0x111, note_duration=-1)
 
     def test_zero_note_duration(self) -> None:
         """Test zero note duration."""
         with self.assertRaises(ValueError):
-            self.hash.notes(key=0x111, note_duration=0)
+            self.hash.samples(key=0x111, note_duration=0)
 
     def test_positive_note_duration(self) -> None:
         """Test positive note duration."""
@@ -368,12 +369,12 @@ class TestSamples(unittest.TestCase):
     def test_negative_sample_rate(self) -> None:
         """Test negative sample rate."""
         with self.assertRaises(ValueError):
-            self.hash.notes(key=0x111, note_duration=1, sample_rate=-44100)
+            self.hash.samples(key=0x111, note_duration=1, sample_rate=-44100)
 
     def test_zero_sample_rate(self) -> None:
         """Test zero sample rate."""
         with self.assertRaises(ValueError):
-            self.hash.notes(key=0x111, note_duration=1, sample_rate=0)
+            self.hash.samples(key=0x111, note_duration=1, sample_rate=0)
 
     def test_positive_sample_rate(self) -> None:
         """Test positive sample rate."""
@@ -398,6 +399,48 @@ class TestSamples(unittest.TestCase):
                             659.2551138257398, 783.9908719634985,
                             783.9908719634985, 466.1637615180899,
                             587.3295358348151])
+
+
+class TestWave(unittest.TestCase):
+    """Test the wave method of the MusicalHash class."""
+
+    def setUp(self) -> None:
+        """Construct a MusicalHash object for this test."""
+        self.hash = musical_hash.MusicalHash(b'Hello World', 'md5')
+
+    def test_empty_filename(self) -> None:
+        """Test with an empty filename."""
+        with self.assertRaises(FileNotFoundError):
+            self.hash.wave('')
+
+    def test_unicode_filename(self) -> None:
+        """Test with a unicode filename."""
+        self.hash.wave('散列.wav')
+        self.assertTrue(os.path.isfile('散列.wav'))
+
+    def test_unicode_filename2(self) -> None:
+        """Test another unicode filename."""
+        self.hash.wave('🍎🍐🍊🍌.wav')
+
+    def test_no_notes_in_key(self) -> None:
+        """Test with a key with no notes."""
+        with self.assertRaises(ValueError):
+            self.hash.wave('hash.wav', key=0x0)
+
+    def test_one_note_in_key(self) -> None:
+        """Test with a key with one note."""
+        with self.assertRaises(ValueError):
+            self.hash.wave('hash.wav', key=0x2)
+
+    def tearDown(self) -> None:
+        """Clean up any created files."""
+        for file in os.listdir():
+            if file.endswith('.wav') and os.path.isfile(file):
+                try:
+                    os.remove(file)
+                except OSError:
+                    pass
+
 
 if __name__ == '__main__':
     unittest.main()
