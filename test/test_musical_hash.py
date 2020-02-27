@@ -5,11 +5,16 @@ from typing import Callable, Dict, List, Union
 import os
 import unittest
 import numpy
+import wavio
 import musical_hash
 
 
 Expectation = Dict[str,
-                   Union[bytearray, str, Callable[[bytearray], bytearray]]]
+                   Union[int,
+                         float,
+                         bytearray,
+                         str,
+                         Callable[[bytearray], bytearray]]]
 
 
 class TestConstructor(unittest.TestCase):
@@ -21,7 +26,7 @@ class TestConstructor(unittest.TestCase):
 
     def check_assertions(self,
                          musical_hash_object: musical_hash.MusicalHash,
-                         expectation: dict) -> None:
+                         expectation: Expectation) -> None:
         """Simplify assertion checks for constructor tests."""
         self.assertEqual(
             musical_hash_object.data,
@@ -408,6 +413,29 @@ class TestWave(unittest.TestCase):
         """Construct a MusicalHash object for this test."""
         self.hash = musical_hash.MusicalHash(b'Hello World', 'md5')
 
+    def check_assertions(self, expectation: Expectation) -> None:
+        """Simplify assertion checks for wave method."""
+        self.hash.wave(
+            filename=expectation['filename'],
+            key=expectation['key'],
+            note_duration=expectation['note_duration'],
+            sample_rate=expectation['sample_rate'])
+        self.assertTrue(
+            os.path.isfile(expectation['filename']), 'File not created.')
+        wave_file = wavio.read(expectation['filename'])
+        self.assertEqual(
+            wave_file.rate,
+            expectation['sample_rate'],
+            'Sample rate of wave file does not match input rate.')
+        self.assertTrue(
+            numpy.array_equal(
+                wave_file.data,
+                self.hash.samples(expectation['key'],
+                                  expectation['note_duration'],
+                                  expectation['sample_rate'])),
+            'The wave file samples do not match the output of the musical hash'
+            'object\'s samples method.')
+
     def test_empty_filename(self) -> None:
         """Test with an empty filename."""
         with self.assertRaises(FileNotFoundError):
@@ -415,12 +443,53 @@ class TestWave(unittest.TestCase):
 
     def test_unicode_filename(self) -> None:
         """Test with a unicode filename."""
-        self.hash.wave('散列.wav')
-        self.assertTrue(os.path.isfile('散列.wav'))
+        self.check_assertions({
+            'filename': '散列.wav',
+            'key': musical_hash.CHROMATIC_SCALE,
+            'note_duration': 0.5,
+            'sample_rate': 44100,
+            'expectation': [466.1637615180899, 554.3652619537442,
+                            554.3652619537442, 523.2511306011972,
+                            554.3652619537442, 554.3652619537442,
+                            440.0, 622.2539674441618, 698.4564628660078,
+                            523.2511306011972, 698.4564628660078,
+                            493.8833012561241, 830.6093951598903, 440.0,
+                            466.1637615180899, 554.3652619537442,
+                            739.9888454232688, 659.2551138257398,
+                            783.9908719634985, 554.3652619537442, 440.0,
+                            783.9908719634985, 554.3652619537442,
+                            493.8833012561241, 659.2551138257398,
+                            466.1637615180899, 698.4564628660078,
+                            587.3295358348151, 783.9908719634985,
+                            587.3295358348151, 587.3295358348151,
+                            659.2551138257398, 783.9908719634985,
+                            783.9908719634985, 466.1637615180899,
+                            587.3295358348151]})
 
     def test_unicode_filename2(self) -> None:
         """Test another unicode filename."""
-        self.hash.wave('🍎🍐🍊🍌.wav')
+        self.check_assertions({
+            'filename': '🍎🍐🍊🍌.wav',
+            'key': musical_hash.CHROMATIC_SCALE,
+            'note_duration': 1,
+            'sample_rate': 48000,
+            'expectation': [466.1637615180899, 554.3652619537442,
+                            554.3652619537442, 523.2511306011972,
+                            554.3652619537442, 554.3652619537442,
+                            440.0, 622.2539674441618, 698.4564628660078,
+                            523.2511306011972, 698.4564628660078,
+                            493.8833012561241, 830.6093951598903, 440.0,
+                            466.1637615180899, 554.3652619537442,
+                            739.9888454232688, 659.2551138257398,
+                            783.9908719634985, 554.3652619537442, 440.0,
+                            783.9908719634985, 554.3652619537442,
+                            493.8833012561241, 659.2551138257398,
+                            466.1637615180899, 698.4564628660078,
+                            587.3295358348151, 783.9908719634985,
+                            587.3295358348151, 587.3295358348151,
+                            659.2551138257398, 783.9908719634985,
+                            783.9908719634985, 466.1637615180899,
+                            587.3295358348151]})
 
     def test_no_notes_in_key(self) -> None:
         """Test with a key with no notes."""
