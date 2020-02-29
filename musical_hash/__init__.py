@@ -2,4 +2,4 @@
 autodocker."""
 
 from ._scales import *
-from ._musical_hash import MusicalHash, get_scale
+from ._musical_hash import MusicalHash

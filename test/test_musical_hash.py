@@ -1,4 +1,4 @@
-"""Unit test cases for the musical_hash module."""
+"""Unit test cases for the _musical_hash module."""
 
 
 from typing import Callable, Dict, List, Union
