@@ -4,6 +4,7 @@
 from typing import Callable, Dict, List, Union
 import os
 import unittest
+import mido
 import numpy
 import wavio
 import musical_hash
@@ -673,6 +674,110 @@ class TestWave(unittest.TestCase):
         """Clean up any created files."""
         for file in os.listdir():
             if file.endswith('.wav') and os.path.isfile(file):
+                try:
+                    os.remove(file)
+                except OSError:
+                    pass
+
+
+class TestMidi(unittest.TestCase):
+    """Test the midi method of the MusicalHash class."""
+
+    def setUp(self) -> None:
+        """Construct a MusicalHash object for this test."""
+        self.hash = musical_hash.MusicalHash(b'Hello World', 'md5')
+
+    def test_empty_filename(self) -> None:
+        """Test with an empty filename."""
+        with self.assertRaises(FileNotFoundError):
+            self.hash.midi('')
+
+    def test_unicode_filename(self) -> None:
+        """Test with a unicode filename."""
+        self.hash.midi('散列.mid')
+        self.assertTrue(os.path.isfile('散列.mid'), 'File not created.')
+
+    def test_unicode_filename2(self) -> None:
+        """Test another unicode filename."""
+        self.hash.midi('🍎🍐🍊🍌.mid')
+        self.assertTrue(os.path.isfile('🍎🍐🍊🍌.mid'), 'File not created.')
+
+    def test_no_notes_in_key(self) -> None:
+        """Test with a key with no notes."""
+        with self.assertRaises(ValueError):
+            self.hash.midi('test.mid', key=0x0)
+
+    def test_one_note_in_key(self) -> None:
+        """Test with a key with one note."""
+        with self.assertRaises(ValueError):
+            self.hash.midi('test.mid', key=0x4)
+
+    def test_two_notes_in_key(self) -> None:
+        """Test with a scale with two notes."""
+        self.hash.midi('test.mid', key=0xa)
+        midi_file = mido.MidiFile('test.mid')
+        notes_present = []
+        for track in midi_file.tracks:
+            for message in track:
+                if (message.type == 'note_on' and
+                        message.note not in notes_present):
+                    notes_present.append(message.note)
+        notes_present.sort()
+        self.assertEqual(
+            notes_present,
+            [70, 72],
+            'Incorrect notes in output midi file.')
+
+    def test_chromatic_scale(self):
+        """Test with a chromatic scale."""
+        self.hash.midi('test.mid', key=0xfff)
+        midi_file = mido.MidiFile('test.mid')
+        notes_present = []
+        for track in midi_file.tracks:
+            for message in track:
+                if (message.type == 'note_on' and
+                        message.note not in notes_present):
+                    notes_present.append(message.note)
+        notes_present.sort()
+        self.assertEqual(
+            notes_present,
+            [69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80],
+            'Incorrect notes in output midi file.')
+
+    def test_too_many_notes_in_key(self) -> None:
+        """Test key with too many notes."""
+        with self.assertRaises(ValueError):
+            self.hash.midi('test.mid', key=0x3fff)
+
+    def test_negative_note_duration(self) -> None:
+        """Test negative note duration."""
+        with self.assertRaises(ValueError):
+            self.hash.midi('test.mid', key=0x111, note_duration=-1)
+
+    def test_zero_note_duration(self) -> None:
+        """Test zero note duration."""
+        with self.assertRaises(ValueError):
+            self.hash.midi('test.mid', key=0x111, note_duration=0)
+
+    def test_instrument_change(self) -> None:
+        """Test changes to the selected midi instrument."""
+        self.hash.midi('test.mid', instrument=0xa)
+        midi_file = mido.MidiFile('test.mid')
+        for i, track in enumerate(midi_file.tracks):
+            self.assertEqual(
+                track[0].type,
+                'program_change',
+                'Midi instrument needs to be set before playing notes.')
+            if track[0].type == 'program_change':
+                self.assertEqual(
+                    track[0].program,
+                    0xa,
+                    'Incorrect instrument selected on track {}'.format(i))
+
+    def tearDown(self) -> None:
+        """Clean up any created files."""
+        for file in os.listdir():
+            if file.endswith('.mid') and os.path.isfile(file):
                 try:
                     os.remove(file)
                 except OSError:

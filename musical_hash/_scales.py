@@ -1,31 +1,10 @@
-"""Musical constants used while converting between bytes and melodies.
-
-This module has has three basic groupings:
-
-1.) File IO Constants - constants associated with sampling rate, bit depth, and
-    other options associated with sound quality.
-
-2.) Translation Constants - constants associated with the operation of
-    converting bytes to a melody.
-
-3.) Diatonic Scales - each constant is an integer that represents a particular
-    diatonic scale.  The first semitone in the octave (usually A440) is
-    represented by the least significant bit and the highest semitone (G before
-    A880) is represented by the most significant bit.  Each bit that is one
-    indicates that semitone is present in the scale, therefore the Hamming
-    distance between any diatonic scale constant and 0x00 is always seven.
-
-4.) Pentatonic Scales - each constant is an integer constructed according to
-    the same rules as the diatonic scale constants.  The difference is now that
-    the Hamming distance between a pentatonic scale constant and 0x00 is always
-    five.
-"""
+"""Scale constants and functions to help with the creation of new scales."""
 
 
 from typing import List
 
 
-# Translation Constants
+# Chromatic Scale
 CHROMATIC_SCALE = 0xfff
 
 
@@ -107,7 +86,7 @@ E_BLUES_MINOR = 0x629
 E_EGYPTIAN = 0x4a5
 E_MAJOR_PENTATONIC = 0x295
 E_MINOR_PENTATONIC = 0x4a9
-F_BLUES_MAJOR= 0x1a3
+F_BLUES_MAJOR = 0x1a3
 F_BLUES_MINOR = 0xc52
 F_EGYPTIAN = 0x94a
 F_MAJOR_PENTATONIC = 0x18b
@@ -130,7 +109,21 @@ G_SHARP_MINOR_PENTATONIC = 0x8d2
 
 
 def get_scale(notes: List[str]) -> int:
-    """Convert a list of notes to a scale constant."""
+    """Convert a list of notes to a scale constant.
+
+    # Args
+    - *notes*: list of notes in the scale.  This should be a list of string
+        where each string is a note ABC notation. Sharps should be
+        represented with a pound sign preceding the note e.g. '#A' and flats
+        should be represented with a lower case b preceding the note e.g. 'bB'.
+
+    # Returns
+    An integer mask used to represent a musical key or scale as an argument to
+    any of the MusicalHash methods.
+
+    # Raises
+    A ValueError if an invalid string is included in the input list.
+    """
     note_map = {'A': 0x1,
                 '#A': 0x2, 'bB': 0x2,
                 'B': 0x4,

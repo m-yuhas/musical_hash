@@ -1,9 +1,4 @@
-"""Implements a musical hash in Python.
-
-Convert a hash into a sequence of notes so that you can "visualize" any given
-hash.  Conversely, take a sequence of notes and turn them into the bytes of a
-hash to use during computations.
-"""
+"""MusicalHash class and helper functions."""
 
 
 from typing import Callable, List, Union
@@ -17,7 +12,7 @@ from ._scales import CHROMATIC_SCALE
 
 DEFAULT_NOTE_DURATION = 0.5
 DEFAULT_SAMPLE_RATE = 44100
-DEFAULT_TICKS_PER_NOTE = 1000
+DEFAULT_TICKS_PER_NOTE = 500
 PITCH_STANDARD = 440
 
 
@@ -26,7 +21,24 @@ HashFunction = Callable[[bytearray], bytearray]
 
 def get_notes_in_scale(all_notes: List[Union[float, int, str]],
                        scale: int) -> List[Union[float, int, str]]:
-    """Blah"""
+    """Return a list of all notes in scale, where the notes are chosen from a
+    set of all twelve possible semitones.
+
+    Args:
+        all_notes: List of strings, integers, or floats that make up the set of
+            all twelve semitones.  The list contents could represent notes in
+            ABC notation (A, #A, B, ...), frequencies, midi note numbers, etc.
+        scale: an integer mask where each '1' bit means the note is present in
+            the output scale and a '0' bit means it is not present.  The least
+            significant bit always corresponds to the first note in all_notes.
+
+    Returns:
+        A list of notes that is a subset of the input all_notes list.
+
+    Raises:
+        A ValueError if the scale argument has one or fewer notes or more than
+        twelve notes.
+    """
     if scale <= 1 or scale > 0xfff:
         raise ValueError(
             'A valid musical scale must include at least two notes and no '
@@ -43,7 +55,17 @@ def get_notes_in_scale(all_notes: List[Union[float, int, str]],
 
 
 def change_base(number: int, base: int) -> List[int]:
-    """Blah"""
+    """Express an integer in another base.
+
+    Args:
+        number: The integer to convert.
+        base: The base to which to convert number.
+
+    Returns:
+        A list of integers, where each integer is a digit in number expressed
+        as base. The first element in the list is least significant digit and
+        the final element is the most significant digit.
+    """
     digits = []
     while number >= base:
         remainder = number % base
@@ -59,13 +81,17 @@ def pitches_to_tune(pitches: List[float],
     """Convert a list of pitches to a tune.
 
     Args:
-        pitches: list of floats, each corresponding to a pitch in hertz.
+        pitches: list of floats, each corresponding to a pitch in Hertz.
         note_duration: default note duration in seconds.
         sample_rate: the sample rate for the output tune.
 
     Returns:
-        A numpy array of samples at <sample_rate> that represents a tune
+        A numpy array of samples at sample_rate that represents a tune
         constructed by the input list of pitches.
+
+    Raises:
+        A ValueError if the note duration or sample rate is less than or equal
+        to zero.
     """
     if note_duration <= 0 or sample_rate <= 0:
         raise ValueError(
@@ -86,12 +112,17 @@ def pitches_to_tune(pitches: List[float],
 class MusicalHash:
     """Represents a musical hash of a bytearray.
 
-    Attributes:
-        data: the input data to the musical hash.  Must be a bytearray
-        hash_method: the method to use for hashing.  Can be a string
-            for a built-in hash method, or callable for one that is
-            user-defined
-        hashed_bytes: the hashed bytes
+    # Args
+    - *data*: the input data to the musical hash.  Must be a bytearray.
+    - *hash_method*: the method to use for hashing.  Can be a string for a
+        built-in hash method, or callable for one that is user-defined. A
+        user-defined hash method is a Callable object that takes a single
+        argument (bytearray) and returns a bytearray, which is the hashed value
+        of the input.  The built-in hash methods are: 'md5', 'sha1', 'sha224',
+        'sha384', 'sha512', 'blake2b', 'blake2s', 'adler32', 'crc32'.
+
+    # Raises
+    A ValueError if an unsupported hash method is specified in the constructor.
     """
 
     def __init__(self,
@@ -136,15 +167,19 @@ class MusicalHash:
               sharps: bool = True) -> List[str]:
         """Return the hash as a list of notes ('A', '#A', B, '#B', ... ).
 
-        Args:
-            key: integer (see constants) corresponding to the musical key.
-            sharps: boolean True if semitones should be reported as sharps
-                (#<note) or False if they should be reported as flats
-                (b<note>).
+        # Args
+        - *key*: integer (see scale constants) corresponding to the musical
+            key.
+        - *sharps*: boolean True if semitones should be reported as sharps
+                (#A) or False if they should be reported as flats (bB).
 
-        Returns:
-            A List of string where each element corresponds to a note in the
-            musical representation of this hash value.
+        # Returns
+        A List of string where each element corresponds to a note in the
+        musical representation of this hash value.
+
+        # Raises
+        A ValueError if the key argument has one or fewer notes or more than
+        twelve notes.
         """
         notes = []
         if sharps:
@@ -164,15 +199,20 @@ class MusicalHash:
                 sample_rate: int = DEFAULT_SAMPLE_RATE) -> numpy.ndarray:
         """Return the hash as a numpy array of samples.
 
-        Args:
-            key: integer (see constants) corresponding to the musical key
-            note_duration: duration of each note in seconds
-            sample_rate: sample rate for the output audio
+        # Args
+        - *key*: integer (see scale constants) corresponding to the musical key
+        - *note_duration*: duration of each note in seconds
+        - *sample_rate*: sample rate for the output audio
 
-        Returns:
-            Numpy array of audio samples with <sample rate>.  The hash will be
-            represented in <key> with each note lasting <note_duration>
-            seconds.
+        # Returns
+        Numpy array of audio samples with sample rate.  The hash will be
+        represented in a musical key with each note lasting note_duration
+        seconds.
+
+        # Raises
+        A ValueError if the key argument has one or fewer notes or more than
+        twelve notes or if the sample_rate or note_duration are less than or
+        equal to zero.
         """
         if note_duration <= 0 or sample_rate <= 0:
             raise ValueError(
@@ -195,11 +235,16 @@ class MusicalHash:
              sample_rate: int = DEFAULT_SAMPLE_RATE) -> None:
         """Returns the hash as a wave file.
 
-        Args:
-            filename: file path for the output wave file.
-            key: integer (see constants) corresponding to the musical key
-            note_duration: duration of each note in seconds
-            sample_rate: sample rate for the output audio
+        # Args
+        - *filename*: file path for the output wave file.
+        - *key*: integer (see constants) corresponding to the musical key.
+        - *note_duration*: duration of each note in seconds.
+        - *sample_rate*: sample rate for the output audio.
+
+        # Raises
+        A ValueError if the key argument has one or fewer notes or more than
+        twelve notes or if the sample_rate or note_duration are less than or
+        equal to zero.
         """
         if filename == '':
             raise FileNotFoundError('Empty filename not permitted')
@@ -216,13 +261,17 @@ class MusicalHash:
              instrument: int = 1) -> None:
         """Returns the hash as a midi file.
 
-        Args:
-            filename: file path for the output midi file.
-            key: integer (see constants) corresponding to the musical key
-            note_duration: duration of each note in midi ticks
-            volume: number between 0 and 1 where 1 is maximum volume and 0 is
-                mute
+        # Args
+        - *filename*: file path for the output midi file.
+        - *key*: integer (see constants) corresponding to the musical key.
+        - *note_duration*: duration of each note in midi ticks.
+        - *instrument*: integer between 0 and 128 corresponding to the desired
+            midi program.
         """
+        if filename == '':
+            raise FileNotFoundError('Empty filename not permitted')
+        if note_duration <= 0:
+            raise ValueError('Note duration must be a positive integer')
         file = mido.MidiFile()
         track = mido.MidiTrack()
         track.append(
@@ -233,12 +282,12 @@ class MusicalHash:
                 len(scale)):
             track.append(mido.Message(
                 'note_on',
-                note=note,
+                note=scale[note],
                 velocity=127,
                 time=0))
             track.append(mido.Message(
                 'note_off',
-                note=note,
+                note=scale[note],
                 velocity=127,
                 time=note_duration))
         file.tracks.append(track)
