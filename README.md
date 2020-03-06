@@ -31,6 +31,9 @@ hash.wave('hash.wav', key=musical_hash.A_BLUES_MAJOR)
 hash.midi('hash.mid', key=musical_hash.A_BLUES_MAJOR)
 ```
 
+## API Documentation
+For the complete API documentation, [click here](doc/api_documentation.md).
+
 ## Theory of Operation
 In western music there are twelve semitones in an octave. The first note of the
 subsequent octave is the first harmonic of the first note of the previous
@@ -51,3 +54,13 @@ The following Pypi packages are required:
 * mido
 * numpy
 * wavio
+
+## Contributing
+Suggestions and pull requests are welcome.  If you find a bug and don't have
+time to fix it yourself, feel free to open an issue.  Also, I am not an expert
+at Music Theory; if you find an error with the way a scale or musical term is
+named, please call it out so that I can learn.
+
+## Future Tasks
+- TODO: Make a hash that includes chords to decrease the tune length and
+    increase the perceived uniqueness of each hash.
