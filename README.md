@@ -1,8 +1,17 @@
 # Musical Hash
+[中文指南](doc/读我档案.md)
+
+[Documentación en español](doc/LÉAME.md)
+
+[Documentation en français](doc/LISEZ-MOI.md)
+
 ## Introduction
-Just as Random Art provides a method to visualize RSA keys, Musical Hash
-provides a method to "visualize" the output of a hash function in the audio
-domain.
+Just as [Random Art](https://github.com/calmh/randomart) provides a method to
+visualize RSA keys, Musical Hash provides a method to "visualize" the output of
+a hash function as audio. It generates a unique melody for each hash value that
+can be exported as a wave file, a midi file, or a list of notes in ABC
+notation.
+
 ## Quick Start
 * Clone this repository:
 
@@ -22,13 +31,28 @@ python setup.py sdist
 python -m pip install musical_hash-x.y.z.tar.gz
 ```
 
-* Try it:
+* In a Python console, import the package:
 
+```python
+>>> import musical_hash
 ```
-import musical_hash
-hash = musical_hash.MusicalHash(b'Hello World!', 'md5')
-hash.wave('hash.wav', key=musical_hash.A_BLUES_MAJOR)
-hash.midi('hash.mid', key=musical_hash.A_BLUES_MAJOR)
+
+* Construct the musical hash object:
+
+```python
+>>> hash = musical_hash.MusicalHash(b'Hello World!', 'md5')
+```
+
+* Export the hash as a wave file in the key of A blues major:
+
+```python
+>>> hash.wave('hash.wav', key=musical_hash.A_PENTATONIC_MINOR)
+```
+
+* Or, export as a midi file:
+
+```python
+>>> hash.midi('hash.mid', key=musical_hash.A_PENTATONIC_MINOR)
 ```
 
 ## API Documentation
@@ -64,3 +88,8 @@ named, please call it out so that I can learn.
 ## Future Tasks
 - TODO: Make a hash that includes chords to decrease the tune length and
     increase the perceived uniqueness of each hash.
+
+## See Also
+Originally I thought I was the only one with this idea, but after I implemented
+it I found this guy's [repository](https://github.com/jmaclean/musical-hash),
+so check it out if you want to see another take on the concept.
