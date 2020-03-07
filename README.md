@@ -43,7 +43,7 @@ python -m pip install musical_hash-x.y.z.tar.gz
 >>> hash = musical_hash.MusicalHash(b'Hello World!', 'md5')
 ```
 
-* Export the hash as a wave file in the key of A blues major:
+* Export the hash as a wave file in the key of A pentatonic minor:
 
 ```python
 >>> hash.wave('hash.wav', key=musical_hash.A_PENTATONIC_MINOR)
@@ -59,14 +59,14 @@ python -m pip install musical_hash-x.y.z.tar.gz
 For the complete API documentation, [click here](doc/api_documentation.md).
 
 ## Theory of Operation
-In western music there are twelve semitones in an octave. The first note of the
-subsequent octave is the first harmonic of the first note of the previous
-octave.  Thus we will consider a single octave as the universe of all notes
-available to "visualize" a sequence of bytes.  Most pieces of music are written
-in a specific key, which is a subset of all available notes.  Within a single
-octave, each key has a finite number of notes, so if we consider the sequence of
-bytes as an integer, we can find that integer's representation in a base equal
-to the number of notes in a key.  We then assign each digit of this
+In western classical music there are twelve semitones in an octave. The first
+note of the subsequent octave is the first harmonic of the first note of the
+previous octave.  Thus we will consider a single octave as the universe of all
+notes available to "visualize" a sequence of bytes.  Most pieces of music are
+written in a specific key, which is a subset of all available notes.  Within a
+single octave, each key has a finite number of notes, so if we consider the
+sequence of bytes as an integer, we can find that integer's representation in a
+base equal to the number of notes in a key.  We then assign each digit of this
 representation a musical note.  This package comes with many diatonic and
 pentatonic keys as constants.
 
