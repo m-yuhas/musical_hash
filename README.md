@@ -1,9 +1,9 @@
 # Musical Hash
-[中文指南](doc/读我档案.md)
+[中文指南](https://github.com/m-yuhas/musical_hash/blob/master/doc/读我档案.md)
 
-[Documentación en español](doc/LÉAME.md)
+[Documentación en español](https://github.com/m-yuhas/musical_hash/blob/master/doc/LÉAME.md)
 
-[Documentation en français](doc/LISEZ-MOI.md)
+[Documentation en français](https://github.com/m-yuhas/musical_hash/blob/master/doc/LISEZ-MOI.md)
 
 ## Introduction
 Just as [Random Art](https://github.com/calmh/randomart) provides a method to
@@ -56,7 +56,7 @@ python -m pip install musical_hash-x.y.z.tar.gz
 ```
 
 ## API Documentation
-For the complete API documentation, [click here](doc/api_documentation.md).
+For the complete API documentation, [click here](https://github.com/m-yuhas/musical_hash/blob/master/doc/api_documentation.md).
 
 ## Theory of Operation
 In western classical music there are twelve semitones in an octave. The first

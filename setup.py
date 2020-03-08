@@ -1,18 +1,27 @@
 """Setup script for the musical_hash package."""
 
 
+from os import path
 from setuptools import setup
+
+
+LONG_DESCRIPTION = ''
+with open(
+        path.join(
+            path.abspath(
+                path.dirname(__file__)), 'README.md'), encoding='utf-8') as f:
+    LONG_DESCRIPTION = f.read()
 
 
 setup(
     name='musical_hash',
-    version='0.1.0',
+    version='0.1.2',
     author='m-yuhas',
     author_email='m-yuhas@qq.com',
     maintainer='m-yuhas',
     url='https://github.com/m-yuhas/musical_hash',
     description='like random-art, but with music',
-    long_description='README.md',
+    long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
     license='MIT',
     classifiers=[
