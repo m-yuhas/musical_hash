@@ -13,22 +13,10 @@ can be exported as a wave file, a midi file, or a list of notes in ABC
 notation.
 
 ## Quick Start
-* Clone this repository:
+* Install the package:
 
 ```
-git clone https://github.com/m-yuhas/musical_hash.git
-```
-
-* Build the package:
-
-```
-python setup.py sdist
-```
-
-* Install the package on the desired virtual environment:
-
-```
-python -m pip install musical_hash-x.y.z.tar.gz
+pip install musical_hash
 ```
 
 * In a Python console, import the package:

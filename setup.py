@@ -15,7 +15,7 @@ with open(
 
 setup(
     name='musical_hash',
-    version='0.1.2',
+    version='0.1.3',
     author='m-yuhas',
     author_email='m-yuhas@qq.com',
     maintainer='m-yuhas',

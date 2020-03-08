@@ -8,22 +8,10 @@ que puede ser exportado como archivo WAVE, archivo MIDI, o como una lista de
 notas en la notación musical Abc.
 
 ## Comienzo Rápido
-* Clona este repositorio:
+* Instala el paquete:
 
 ```
-git clone https://github.com/m-yuhas/musical_hash.git
-```
-
-* Construye el paquete:
-
-```
-python setup.py sdist
-```
-
-* Instala el paquete en el ambiente virtual deseado:
-
-```
-python -m pip install musical_hash-x.y.z.tar.gz
+pip install musical_hash
 ```
 
 * En una consola Python, importa el paquete:
